@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Extracción de documentos con IA — Smartflow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0e0e0e;
+  --paper: #f5f2ec;
+  --blue: #2563eb;
+  --blue-light: #eff4ff;
+  --blue-mid: #93aff5;
+  --muted: #888076;
+  --border: rgba(14,14,14,0.12);
+  --radius: 16px;
+  --green: #16a34a;
+  --green-light: #f0fdf4;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: 'DM Sans', sans-serif; background: var(--paper); color: var(--ink); font-size: 16px; line-height: 1.6; overflow-x: hidden; }
+
+/* NAV */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.25rem 3rem;
+  background: rgba(245,242,236,0.85); backdrop-filter: blur(12px);
+  border-bottom: 0.5px solid var(--border);
+}
+.logo { font-family: 'Instrument Serif', serif; font-size: 22px; letter-spacing: -.02em; color: var(--ink); display: flex; align-items: center; gap: 8px; text-decoration: none; }
+.logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); display: inline-block; }
+.nav-pill { font-size: 12px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--blue); background: var(--blue-light); padding: 5px 14px; border-radius: 50px; border: 0.5px solid rgba(37,99,235,.2); }
+
+/* HERO */
+.hero { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 8rem 2rem 5rem; position: relative; overflow: hidden; }
+.hero-bg { position: absolute; inset: 0; z-index: 0; background: radial-gradient(ellipse 55% 50% at 65% 35%, rgba(37,99,235,0.09) 0%, transparent 70%), radial-gradient(ellipse 40% 55% at 15% 75%, rgba(37,99,235,0.05) 0%, transparent 60%); }
+.hero-grid { position: absolute; inset: 0; z-index: 0; opacity: .4; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 60px 60px; mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%); }
+.hero-content { position: relative; z-index: 1; max-width: 680px; }
+.eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--blue); font-weight: 500; margin-bottom: 1.75rem; opacity: 0; animation: fadeUp .6s .1s ease forwards; }
+.eyebrow::before, .eyebrow::after { content: ''; width: 24px; height: 1px; background: var(--blue); }
+h1 { font-family: 'Instrument Serif', serif; font-size: clamp(44px, 6.5vw, 78px); line-height: 1.06; letter-spacing: -.03em; color: var(--ink); margin-bottom: 1.5rem; font-weight: 400; opacity: 0; animation: fadeUp .7s .25s ease forwards; }
+h1 em { font-style: italic; color: var(--blue); }
+.hero-sub { font-size: 18px; color: var(--muted); max-width: 500px; margin: 0 auto 2.5rem; line-height: 1.7; font-weight: 300; opacity: 0; animation: fadeUp .7s .4s ease forwards; }
+.hero-arrow { opacity: 0; animation: fadeUp .7s .55s ease forwards; display: inline-flex; flex-direction: column; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; text-decoration: none; transition: color .2s; }
+.hero-arrow:hover { color: var(--blue); }
+.arrow-circle { width: 40px; height: 40px; border-radius: 50%; border: 0.5px solid var(--border); display: flex; align-items: center; justify-content: center; transition: border-color .2s; animation: bounce 2s 1.5s ease-in-out infinite; }
+.hero-arrow:hover .arrow-circle { border-color: var(--blue); }
+@keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(5px)} }
+.hero-stats { display: flex; justify-content: center; gap: 3.5rem; margin-top: 5rem; padding-top: 2.5rem; border-top: 0.5px solid var(--border); opacity: 0; animation: fadeUp .7s .7s ease forwards; }
+.stat-num { font-family: 'Instrument Serif', serif; font-size: 38px; letter-spacing: -.03em; color: var(--ink); line-height: 1; }
+.stat-lbl { font-size: 13px; color: var(--muted); margin-top: 4px; font-weight: 300; }
+
+/* SHARED */
+.section-wrap { max-width: 760px; margin: 0 auto; padding: 7rem 2rem; }
+.section-tag { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--blue); font-weight: 500; margin-bottom: 2.5rem; display: flex; align-items: center; gap: 10px; }
+.section-tag::after { content: ''; flex: 1; height: 0.5px; background: var(--border); max-width: 80px; }
+
+/* UPLOAD ZONE */
+.upload-zone {
+  border: 1.5px dashed rgba(37,99,235,.3); border-radius: var(--radius);
+  background: #fff; padding: 3rem 2rem; text-align: center;
+  cursor: pointer; transition: all .2s; position: relative;
+  margin-bottom: 1.5rem;
+}
+.upload-zone:hover, .upload-zone.drag { border-color: var(--blue); background: var(--blue-light); }
+.upload-zone.drag { transform: scale(1.01); }
+.upload-icon { width: 48px; height: 48px; border-radius: 12px; background: var(--blue-light); border: 0.5px solid rgba(37,99,235,.2); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; }
+.upload-title { font-size: 16px; font-weight: 500; color: var(--ink); margin-bottom: .4rem; }
+.upload-sub { font-size: 13px; color: var(--muted); font-weight: 300; margin-bottom: 1.25rem; }
+.upload-types { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.upload-type { font-size: 11px; background: var(--blue-light); color: var(--blue); border: 0.5px solid rgba(37,99,235,.2); padding: 3px 10px; border-radius: 50px; font-weight: 500; letter-spacing: .04em; }
+#file-input { display: none; }
+.file-selected { display: none; align-items: center; gap: 12px; background: var(--green-light); border: 0.5px solid rgba(22,163,74,.2); border-radius: 10px; padding: .9rem 1.25rem; margin-bottom: 1.5rem; }
+.file-selected.show { display: flex; }
+.file-icon { width: 36px; height: 36px; border-radius: 8px; background: #dcfce7; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.file-name { font-size: 14px; font-weight: 500; color: var(--ink); }
+.file-size { font-size: 12px; color: var(--muted); font-weight: 300; }
+.file-remove { margin-left: auto; font-size: 12px; color: var(--muted); cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: background .15s; }
+.file-remove:hover { background: rgba(14,14,14,.07); }
+
+/* DOC TYPE SELECTOR */
+.doc-type-label { font-size: 14px; font-weight: 500; color: var(--ink); margin-bottom: .75rem; }
+.doc-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 2rem; }
+.doc-pill { padding: 7px 16px; border-radius: 50px; font-size: 13px; cursor: pointer; border: 0.5px solid var(--border); background: transparent; color: var(--muted); transition: all .15s; user-select: none; font-family: 'DM Sans', sans-serif; }
+.doc-pill:hover { border-color: rgba(37,99,235,.3); color: var(--ink); }
+.doc-pill.active { background: var(--blue-light); border-color: rgba(37,99,235,.35); color: var(--blue); font-weight: 500; }
+
+.process-btn { width: 100%; padding: .95rem; background: var(--ink); color: var(--paper); border: none; border-radius: 50px; font-size: 15px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: background .2s, transform .15s; }
+.process-btn:hover { background: var(--blue); transform: translateY(-1px); }
+.process-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+/* PROCESSING */
+.processing-wrap { display: none; border-top: 0.5px solid var(--border); }
+.processing-wrap.show { display: block; }
+.processing-steps { display: none; text-align: center; padding: 4rem 2rem; }
+.processing-steps.show { display: block; }
+.steps-list { display: flex; flex-direction: column; gap: .75rem; max-width: 300px; margin: 0 auto 0; }
+.p-step { display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--muted); font-weight: 300; opacity: .4; transition: opacity .3s; }
+.p-step.active { opacity: 1; color: var(--ink); }
+.p-step.done { opacity: .6; }
+.p-step-icon { width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.p-step.active .p-step-icon { border-color: var(--blue); }
+.p-step.done .p-step-icon { border-color: var(--green); background: var(--green-light); }
+.step-spinner { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid rgba(37,99,235,.3); border-top-color: var(--blue); animation: spin .6s linear infinite; }
+@keyframes spin { to{transform:rotate(360deg)} }
+.step-check { color: var(--green); font-size: 12px; }
+.step-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); }
+
+/* RESULTS */
+.results-content { display: none; }
+.results-content.show { display: block; }
+
+/* EXTRACTED DATA */
+.extracted-box { background: #fff; border: 0.5px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 2rem; box-shadow: 0 2px 20px rgba(0,0,0,.04); }
+.extracted-header { display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.75rem; border-bottom: 0.5px solid var(--border); }
+.extracted-title { font-size: 14px; font-weight: 500; color: var(--ink); display: flex; align-items: center; gap: 8px; }
+.extracted-tag { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; background: var(--blue); color: #fff; padding: 3px 10px; border-radius: 50px; font-weight: 500; }
+.extracted-meta { font-size: 12px; color: var(--muted); font-weight: 300; }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 500; padding: .75rem 1.75rem; text-align: left; background: #faf9f6; border-bottom: 0.5px solid var(--border); }
+.data-table td { font-size: 14px; padding: .85rem 1.75rem; border-bottom: 0.5px solid var(--border); color: var(--ink); font-weight: 300; vertical-align: top; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table td:first-child { font-weight: 500; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; width: 35%; }
+.val-chip { display: inline-block; background: var(--blue-light); color: var(--blue); font-size: 13px; padding: 2px 10px; border-radius: 50px; font-weight: 500; }
+.val-chip.green { background: var(--green-light); color: var(--green); }
+.val-chip.amber { background: #fffbeb; color: #d97706; }
+
+/* LINES TABLE */
+.lines-box { background: #fff; border: 0.5px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 2rem; box-shadow: 0 2px 20px rgba(0,0,0,.04); }
+.lines-header { padding: 1.25rem 1.75rem; border-bottom: 0.5px solid var(--border); font-size: 14px; font-weight: 500; color: var(--ink); display: flex; align-items: center; gap: 8px; }
+.lines-table { width: 100%; border-collapse: collapse; }
+.lines-table th { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 500; padding: .65rem 1.25rem; text-align: left; background: #faf9f6; border-bottom: 0.5px solid var(--border); }
+.lines-table td { font-size: 13px; padding: .7rem 1.25rem; border-bottom: 0.5px solid var(--border); color: var(--ink); font-weight: 300; }
+.lines-table tr:last-child td { border-bottom: none; }
+.lines-table .num { text-align: right; font-weight: 500; }
+
+/* AI SUMMARY */
+.ai-box { background: #fff; border: 0.5px solid var(--border); border-radius: var(--radius); padding: 2rem; margin-bottom: 2rem; position: relative; box-shadow: 0 2px 20px rgba(0,0,0,.04); }
+.ai-tag { position: absolute; top: -1px; left: 1.75rem; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; background: var(--blue); color: #fff; font-weight: 500; padding: 3px 10px; border-radius: 0 0 8px 8px; }
+.ai-text { font-size: 15px; color: var(--ink); line-height: 1.75; font-weight: 300; padding-top: .75rem; }
+.cursor { display: inline-block; width: 2px; height: 1em; background: var(--blue); animation: blink .7s ease infinite; vertical-align: text-bottom; margin-left: 1px; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+/* DOWNLOAD + CTA */
+.action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
+.btn-download { display: flex; align-items: center; justify-content: center; gap: 8px; padding: .9rem 1.5rem; background: var(--ink); color: var(--paper); border: none; border-radius: 50px; font-size: 15px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; text-decoration: none; transition: background .2s, transform .15s; }
+.btn-download:hover { background: var(--blue); transform: translateY(-1px); }
+.btn-cal { display: flex; align-items: center; justify-content: center; gap: 8px; padding: .9rem 1.5rem; background: var(--blue); color: #fff; border: none; border-radius: 50px; font-size: 15px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; text-decoration: none; transition: opacity .2s, transform .15s; }
+.btn-cal:hover { opacity: .88; transform: translateY(-1px); }
+
+/* CTA BOX */
+.cta-box { background: var(--ink); border-radius: var(--radius); padding: 3rem 2.5rem; text-align: center; position: relative; overflow: hidden; }
+.cta-glow { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 60% 80% at 50% 50%, rgba(37,99,235,.25) 0%, transparent 70%); }
+.cta-box h2 { font-family: 'Instrument Serif', serif; font-size: clamp(26px, 3.5vw, 38px); letter-spacing: -.025em; color: var(--paper); margin-bottom: .75rem; font-weight: 400; position: relative; }
+.cta-box h2 em { font-style: italic; color: var(--blue-mid); }
+.cta-box p { font-size: 15px; color: rgba(245,242,236,.5); margin-bottom: 2rem; font-weight: 300; max-width: 400px; margin-left: auto; margin-right: auto; position: relative; line-height: 1.65; }
+.btn-cta-main { display: inline-block; padding: .9rem 2.5rem; background: var(--paper); color: var(--ink); border: none; border-radius: 50px; font-size: 15px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; text-decoration: none; transition: background .2s, transform .15s; position: relative; }
+.btn-cta-main:hover { background: var(--blue); color: #fff; transform: translateY(-1px); }
+.cta-spots { font-size: 12px; color: rgba(245,242,236,.3); margin-top: .75rem; position: relative; }
+
+/* FOOTER */
+footer { border-top: 0.5px solid var(--border); padding: 1.5rem 3rem; display: flex; justify-content: space-between; align-items: center; }
+.f-logo { font-family: 'Instrument Serif', serif; font-size: 17px; color: var(--muted); text-decoration: none; display: flex; align-items: center; gap: 7px; }
+footer p { font-size: 12px; color: var(--muted); font-weight: 300; }
+
+/* ANIMATIONS */
+@keyframes fadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+.reveal { opacity: 0; transform: translateY(20px); transition: opacity .6s ease, transform .6s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+@media(max-width:640px){
+  nav { padding: 1rem 1.5rem; }
+  .hero { padding: 7rem 1.5rem 4rem; }
+  .hero-stats { gap: 1.5rem; flex-wrap: wrap; }
+  .section-wrap { padding: 4rem 1.5rem; }
+  .action-row { grid-template-columns: 1fr; }
+  footer { flex-direction: column; gap: .5rem; text-align: center; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="#" class="logo"><span class="logo-dot"></span>Smartflow</a>
+  <span class="nav-pill">Extracción de documentos</span>
+</nav>
+
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="eyebrow">Demo en vivo · Gratis</div>
+    <h1>Sube un documento.<br>La IA extrae <em>todo.</em></h1>
+    <p class="hero-sub">Facturas, órdenes de compra, albaranes — procesados en segundos y exportados listos para tu ERP, CRM o Sheets. Sin digitación, sin errores.</p>
+    <a href="#demo" class="hero-arrow">
+      <div class="arrow-circle">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M3 8l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      Probar ahora
+    </a>
+    <div class="hero-stats">
+      <div><div class="stat-num">95%</div><div class="stat-lbl">precisión de extracción</div></div>
+      <div><div class="stat-num">8 seg</div><div class="stat-lbl">por documento procesado</div></div>
+      <div><div class="stat-num">0</div><div class="stat-lbl">digitación manual necesaria</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- UPLOAD -->
+<div class="section-wrap" id="demo">
+  <div class="section-tag reveal">Tu documento</div>
+  <div class="reveal">
+
+    <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+      <div class="upload-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 2v12M7 6l4-4 4 4M3 16v2a1 1 0 001 1h14a1 1 0 001-1v-2" stroke="#2563eb" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="upload-title">Arrastra tu documento aquí</div>
+      <div class="upload-sub">o haz click para seleccionarlo desde tu computadora</div>
+      <div class="upload-types">
+        <span class="upload-type">PDF</span>
+        <span class="upload-type">PNG</span>
+        <span class="upload-type">JPG</span>
+        <span class="upload-type">WEBP</span>
+      </div>
+    </div>
+    <input type="file" id="file-input" accept=".pdf,.png,.jpg,.jpeg,.webp" onchange="handleFileSelect(this)">
+
+    <div class="file-selected" id="file-selected">
+      <div class="file-icon">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M10 2H4a1 1 0 00-1 1v12a1 1 0 001 1h10a1 1 0 001-1V7l-5-5z" stroke="#16a34a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 2v5h5" stroke="#16a34a" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+      <div>
+        <div class="file-name" id="file-name">—</div>
+        <div class="file-size" id="file-size">—</div>
+      </div>
+      <span class="file-remove" onclick="removeFile()">✕ Quitar</span>
+    </div>
+
+    <div class="doc-type-label">¿Qué tipo de documento es?</div>
+    <div class="doc-pills">
+      <div class="doc-pill active" id="dt1" onclick="selectDocType('factura')">Factura</div>
+      <div class="doc-pill" id="dt2" onclick="selectDocType('orden_compra')">Orden de compra</div>
+      <div class="doc-pill" id="dt3" onclick="selectDocType('albaran')">Albarán / guía de entrega</div>
+      <div class="doc-pill" id="dt4" onclick="selectDocType('formulario')">Formulario interno</div>
+      <div class="doc-pill" id="dt5" onclick="selectDocType('otro')">Otro</div>
+    </div>
+
+    <button class="process-btn" id="process-btn" onclick="processDocument()">Extraer datos con IA →</button>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div class="processing-wrap" id="processing-wrap">
+  <div class="section-wrap">
+    <div class="section-tag">Procesando</div>
+
+    <div class="processing-steps" id="processing-steps">
+      <div class="steps-list">
+        <div class="p-step" id="step1">
+          <div class="p-step-icon"><span class="step-dot"></span></div>
+          <span>Leyendo documento…</span>
+        </div>
+        <div class="p-step" id="step2">
+          <div class="p-step-icon"><span class="step-dot"></span></div>
+          <span>Identificando campos…</span>
+        </div>
+        <div class="p-step" id="step3">
+          <div class="p-step-icon"><span class="step-dot"></span></div>
+          <span>Extrayendo datos estructurados…</span>
+        </div>
+        <div class="p-step" id="step4">
+          <div class="p-step-icon"><span class="step-dot"></span></div>
+          <span>Validando consistencia…</span>
+        </div>
+        <div class="p-step" id="step5">
+          <div class="p-step-icon"><span class="step-dot"></span></div>
+          <span>Preparando exportación…</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="results-content" id="results-content">
+
+      <div class="extracted-box">
+        <div class="extracted-header">
+          <div class="extracted-title">
+            <span class="extracted-tag">Extraído</span>
+            <span id="doc-type-label">Documento</span>
+          </div>
+          <div class="extracted-meta" id="extracted-meta">—</div>
+        </div>
+        <table class="data-table" id="main-table"></table>
+      </div>
+
+      <div class="lines-box" id="lines-box" style="display:none">
+        <div class="lines-header">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h8" stroke="#2563eb" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Líneas del documento
+        </div>
+        <table class="lines-table" id="lines-table"></table>
+      </div>
+
+      <div class="ai-box">
+        <span class="ai-tag">Análisis IA</span>
+        <p class="ai-text" id="ai-text"></p>
+      </div>
+
+      <div class="action-row">
+        <button class="btn-download" onclick="downloadCSV()">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M4 7l4 4 4-4M2 12v1a1 1 0 001 1h10a1 1 0 001-1v-1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Descargar CSV
+        </button>
+        <a href="https://cal.com/smartflow.es/30min?user=smartflow.es" target="_blank" rel="noopener" class="btn-cal">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M5 2v2M11 2v2M2 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Automatizar mis documentos
+        </a>
+      </div>
+
+      <div class="cta-box">
+        <div class="cta-glow"></div>
+        <h2>¿Tienes cientos<br>de documentos como <em>este?</em></h2>
+        <p>Te mostramos cómo automatizar la extracción masiva e integrarlo directo a tu ERP, CRM o Sheets — en menos de 30 días.</p>
+        <a href="https://cal.com/smartflow.es/30min?user=smartflow.es" target="_blank" rel="noopener" class="btn-cta-main">Agendar sesión gratuita →</a>
+        <div class="cta-spots">Sin compromiso · 30 minutos · Cupos limitados</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<footer>
+  <a href="#" class="f-logo"><span class="logo-dot" style="width:7px;height:7px"></span>Smartflow</a>
+  <p>© 2026 Smartflow. Todos los derechos reservados.</p>
+</footer>
+
+<script>
+let selectedFile = null;
+let selectedDocType = 'factura';
+let extractedData = null;
+
+function selectDocType(type) {
+  selectedDocType = type;
+  ['dt1','dt2','dt3','dt4','dt5'].forEach(id => document.getElementById(id).classList.remove('active'));
+  const map = {factura:'dt1',orden_compra:'dt2',albaran:'dt3',formulario:'dt4',otro:'dt5'};
+  document.getElementById(map[type]).classList.add('active');
+}
+
+function handleDragOver(e) { e.preventDefault(); document.getElementById('upload-zone').classList.add('drag'); }
+function handleDragLeave() { document.getElementById('upload-zone').classList.remove('drag'); }
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if(file) setFile(file);
+}
+function handleFileSelect(input) { if(input.files[0]) setFile(input.files[0]); }
+
+function setFile(file) {
+  selectedFile = file;
+  document.getElementById('file-name').textContent = file.name;
+  document.getElementById('file-size').textContent = (file.size / 1024).toFixed(1) + ' KB';
+  document.getElementById('file-selected').classList.add('show');
+}
+
+function removeFile() {
+  selectedFile = null;
+  document.getElementById('file-selected').classList.remove('show');
+  document.getElementById('file-input').value = '';
+}
+
+function toBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = () => rej(new Error('Read failed'));
+    r.readAsDataURL(file);
+  });
+}
+
+async function animateSteps() {
+  const steps = ['step1','step2','step3','step4','step5'];
+  const delays = [0, 800, 1600, 2800, 4000];
+  steps.forEach((id, i) => {
+    setTimeout(() => {
+      // Mark previous as done
+      if(i > 0) {
+        const prev = document.getElementById(steps[i-1]);
+        prev.classList.remove('active');
+        prev.classList.add('done');
+        prev.querySelector('.p-step-icon').innerHTML = '<span class="step-check">✓</span>';
+      }
+      const el = document.getElementById(id);
+      el.classList.add('active');
+      el.querySelector('.p-step-icon').innerHTML = '<span class="step-spinner"></span>';
+    }, delays[i]);
+  });
+}
+
+async function processDocument() {
+  if(!selectedFile) { alert('Por favor sube un documento primero.'); return; }
+
+  const btn = document.getElementById('process-btn');
+  btn.disabled = true; btn.textContent = 'Procesando…';
+
+  const wrap = document.getElementById('processing-wrap');
+  wrap.classList.add('show');
+  document.getElementById('processing-steps').classList.add('show');
+  document.getElementById('results-content').classList.remove('show');
+  setTimeout(() => wrap.scrollIntoView({behavior:'smooth', block:'start'}), 100);
+  animateSteps();
+
+  const docTypeLabels = {factura:'Factura',orden_compra:'Orden de compra',albaran:'Albarán / guía de entrega',formulario:'Formulario interno',otro:'Documento'};
+
+  try {
+    const base64 = await toBase64(selectedFile);
+    const isPdf = selectedFile.type === 'application/pdf';
+    const mediaType = isPdf ? 'application/pdf' : selectedFile.type;
+
+    const prompt = `Eres el sistema de extracción de datos de Smartflow. El usuario subió un documento de tipo: ${docTypeLabels[selectedDocType]}.
+
+Extrae TODOS los campos relevantes del documento y responde ÚNICAMENTE con un JSON válido (sin markdown, sin texto extra) con esta estructura:
+
+{
+  "tipo": "tipo de documento detectado",
+  "campos_principales": {
+    "campo1": "valor1",
+    "campo2": "valor2"
+  },
+  "lineas": [
+    {"descripcion": "...", "cantidad": "...", "precio_unitario": "...", "total": "..."}
+  ],
+  "totales": {
+    "subtotal": "...",
+    "impuestos": "...",
+    "total": "..."
+  },
+  "confianza": "alta/media/baja",
+  "anomalias": "descripción de cualquier inconsistencia encontrada, o null si todo está bien",
+  "resumen": "2 oraciones sobre el documento: qué es, qué campos se extrajeron y si hay algo a validar"
+}
+
+Si no hay líneas de detalle, devuelve lineas como array vacío [].
+Si no hay totales, devuelve totales con valores null.
+Extrae todo lo que puedas ver — fechas, números, nombres, direcciones, códigos.`;
+
+    const messages = isPdf
+      ? [{ role:'user', content:[{ type:'document', source:{ type:'base64', media_type:'application/pdf', data: base64 }},{ type:'text', text: prompt }]}]
+      : [{ role:'user', content:[{ type:'image', source:{ type:'base64', media_type: mediaType, data: base64 }},{ type:'text', text: prompt }]}];
+
+    const res = await fetch('/api/diagnose', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ prompt, messages })
+    });
+    const data = await res.json();
+
+    let parsed = null;
+    try {
+      const clean = (data.text || '').replace(/```json|```/g,'').trim();
+      parsed = JSON.parse(clean);
+    } catch(e) { parsed = null; }
+
+    // Finish steps animation
+    setTimeout(() => {
+      const lastStep = document.getElementById('step5');
+      lastStep.classList.remove('active'); lastStep.classList.add('done');
+      lastStep.querySelector('.p-step-icon').innerHTML = '<span class="step-check">✓</span>';
+
+      document.getElementById('processing-steps').classList.remove('show');
+      document.getElementById('results-content').classList.add('show');
+
+      if(parsed) {
+        extractedData = parsed;
+        renderResults(parsed, docTypeLabels[selectedDocType]);
+      } else {
+        document.getElementById('ai-text').textContent = data.text || 'No se pudo procesar el documento.';
+      }
+    }, 5200);
+
+  } catch(e) {
+    setTimeout(() => {
+      document.getElementById('processing-steps').classList.remove('show');
+      document.getElementById('results-content').classList.add('show');
+      document.getElementById('ai-text').textContent = 'Hubo un problema procesando el documento. Intenta de nuevo.';
+    }, 1000);
+  }
+
+  btn.disabled = false; btn.textContent = 'Extraer datos con IA →';
+}
+
+function renderResults(data, docLabel) {
+  // Header
+  document.getElementById('doc-type-label').textContent = data.tipo || docLabel;
+  const conf = data.confianza === 'alta' ? 'green' : data.confianza === 'media' ? 'amber' : '';
+  document.getElementById('extracted-meta').innerHTML = `Confianza: <span class="val-chip ${conf}">${data.confianza || '—'}</span>`;
+
+  // Main fields table
+  const table = document.getElementById('main-table');
+  table.innerHTML = '<tr><th>Campo</th><th>Valor extraído</th></tr>';
+  const campos = data.campos_principales || {};
+  Object.entries(campos).forEach(([k, v]) => {
+    if(v) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${k.replace(/_/g,' ')}</td><td>${v}</td>`;
+      table.appendChild(tr);
+    }
+  });
+  if(data.totales) {
+    Object.entries(data.totales).forEach(([k, v]) => {
+      if(v) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${k.replace(/_/g,' ')}</td><td><strong>${v}</strong></td>`;
+        table.appendChild(tr);
+      }
+    });
+  }
+  if(data.anomalias) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>⚠ Anomalías</td><td style="color:#d97706">${data.anomalias}</td>`;
+    table.appendChild(tr);
+  }
+
+  // Lines table
+  if(data.lineas && data.lineas.length > 0) {
+    document.getElementById('lines-box').style.display = 'block';
+    const lt = document.getElementById('lines-table');
+    lt.innerHTML = '<tr><th>Descripción</th><th>Cant.</th><th class="num">Precio unit.</th><th class="num">Total</th></tr>';
+    data.lineas.forEach(l => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${l.descripcion||'—'}</td><td>${l.cantidad||'—'}</td><td class="num">${l.precio_unitario||'—'}</td><td class="num">${l.total||'—'}</td>`;
+      lt.appendChild(tr);
+    });
+  }
+
+  // AI summary typewriter
+  const el = document.getElementById('ai-text');
+  el.innerHTML = '<span class="cursor"></span>';
+  const cursor = el.querySelector('.cursor');
+  const text = data.resumen || '';
+  let i = 0;
+  function type() {
+    if(i < text.length) { cursor.insertAdjacentText('beforebegin', text[i++]); setTimeout(type, 18); }
+    else cursor.remove();
+  }
+  type();
+}
+
+function downloadCSV() {
+  if(!extractedData) return;
+  const rows = [['Campo','Valor']];
+  const campos = extractedData.campos_principales || {};
+  Object.entries(campos).forEach(([k,v]) => { if(v) rows.push([k, v]); });
+  if(extractedData.totales) Object.entries(extractedData.totales).forEach(([k,v]) => { if(v) rows.push([k, v]); });
+  if(extractedData.lineas && extractedData.lineas.length > 0) {
+    rows.push([]);
+    rows.push(['Descripción','Cantidad','Precio unitario','Total']);
+    extractedData.lineas.forEach(l => rows.push([l.descripcion||'',l.cantidad||'',l.precio_unitario||'',l.total||'']));
+  }
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url;
+  a.download = `smartflow-extraccion-${Date.now()}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target);}});
+},{threshold:.1});
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>
